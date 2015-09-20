@@ -1,0 +1,68 @@
+
+Loading and preprocessing the data
+
+```{r,echo=TRUE}
+library(plyr)
+library (dplyr)
+library(ggplot2)
+activity<-read.csv("activity.csv")
+activity$date<-as.Date(activity$date,"%Y-%d-%m")
+
+```
+
+What is mean total number of steps taken per day?
+
+```{r, echo=TRUE}
+
+sum_per_day<-aggregate(activity$steps, by=list(activity$date),sum)
+
+ggplot(sum_per_day, aes(x=x)) + geom_histogram()
+
+median(sum_per_day$x,na.rm = TRUE)
+mean(sum_per_day$x,na.rm = TRUE)
+
+```
+
+What is the average daily activity pattern?
+
+```{r, echo=TRUE}
+mean_per_interval<-aggregate(activity$steps,by=list(activity$interval),mean,na.rm=TRUE)
+plot(mean_per_interval$Group.1, mean_per_interval$x, type="l")
+mean_per_interval[which.max(mean_per_interval$x),1]
+
+```
+
+Imputing missing values
+
+```{r, echo=TRUE}
+sum(is.na(activity$steps) | is.na(activity$date) )
+activity_comp<-merge(activity,mean_per_interval, by.x = c("interval"), by.y = c("Group.1"))
+activity_comp[which(is.na(activity_comp$steps)),2]<-activity_comp[which(is.na(activity_comp$steps)),4]
+
+activity_comp$x<-NULL    
+sum_per_day_comp<-aggregate(activity_comp$steps, by=list(activity_comp$date),sum)
+ggplot(sum_per_day_comp, aes(x=x)) + geom_histogram()    
+    
+```
+
+
+Are there differences in activity patterns between weekdays and weekends?
+
+```{r, echo=TRUE}
+median(sum_per_day_comp$x,na.rm = TRUE)
+mean(sum_per_day_comp$x,na.rm = TRUE)
+```
+
+-> the mean and the median did not change much
+
+Are there differences in activity patterns between weekdays and weekends?
+```{r, echo=TRUE}
+activity_comp$days<-weekdays(activity_comp$date)
+activity_comp[which(activity_comp$days=="Saturday"| activity_comp$days=="Sunday"),5]<-"weekend"
+activity_comp[which(activity_comp$days=="Monday" | activity_comp$days=="Tuesday"),5]<-"weekday"
+activity_comp[which(activity_comp$days=="Wednesday" | activity_comp$days=="Thursday"),5]<-"weekday"
+activity_comp[which(activity_comp$days=="Friday" ),5]<-"weekday"
+
+mean_per_interval_comp<-aggregate(activity_comp$steps,by=list(activity$interval),mean,na.rm=TRUE)
+plot(mean_per_interval_comp$Group.1, mean_per_interval$x, type="l")
+```
